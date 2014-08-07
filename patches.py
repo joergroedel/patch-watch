@@ -3,6 +3,7 @@
 
 import ConfigParser
 import subprocess
+import string
 import sys
 import os
 
@@ -50,10 +51,18 @@ def init_repo(path):
 def do_list():
 	global base, head, repo;
 
+	# git log --no-merges --reverse -s --format="%H %s"
 	if (base == head):
 		return 0;
-	output = subprocess.check_output([git, 'log', '--reverse', '--no-merges', base + ".." + head])
-	print output
+	output = subprocess.check_output([git, 'log', '--reverse', '--no-merges', '-s', '--format=%H %s', base + ".." + head])
+	lines = output.split('\n');
+	for line in lines:
+		line = line.strip();
+		if line == '':
+			continue
+		commit, subject = line.split(' ', 1);
+		print "Commit: " + commit + " Subject: " + subject
+
 	return 0
 
 def do_update():
