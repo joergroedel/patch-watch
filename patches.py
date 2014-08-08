@@ -17,6 +17,9 @@ head = ''
 
 config = ConfigParser.RawConfigParser()
 
+filters = [ '/home/joro/src/patch-tools/filters/fixes-filter.sh',
+	    '/home/joro/src/patch-tools/filters/stable-filter.sh' ]
+
 def create_config_dir():
 	try:
 		real_path = os.path.expanduser(config_dir)
@@ -48,6 +51,13 @@ def init_repo(path):
 	load_config(config_file)
 	base = config.get(repo, "head").strip()
 
+def filter_match(commit):
+	ret = 0
+	for f in filters:
+		ret |= subprocess.call([f, commit])
+
+	return ret
+
 def do_list():
 	global base, head, repo;
 
@@ -56,12 +66,18 @@ def do_list():
 		return 0;
 	output = subprocess.check_output([git, 'log', '--reverse', '--no-merges', '-s', '--format=%H %s', base + ".." + head])
 	lines = output.split('\n');
+	commits = matches = 0;
 	for line in lines:
 		line = line.strip();
 		if line == '':
 			continue
+		commits += 1
 		commit, subject = line.split(' ', 1);
-		print "Commit: " + commit + " Subject: " + subject
+		if filter_match(commit):
+			matches += 1
+			print "Commit: " + commit + " Subject: " + subject
+
+	print "Commits: " + str(commits) + " Matches: " + str(matches)
 
 	return 0
 
