@@ -9,6 +9,7 @@ import os
 
 config_dir  = '~/.patches/'
 config_file = '~/.patches/repos'
+filter_file = '~/.patches/filters'
 git         = '/usr/bin/git'
 
 repo = ''
@@ -17,8 +18,22 @@ head = ''
 
 config = ConfigParser.RawConfigParser()
 
-filters = [ '/home/joro/src/patch-tools/filters/fixes-filter.sh',
-	    '/home/joro/src/patch-tools/filters/stable-filter.sh' ]
+filters = [ ]
+
+def load_filters(file_name):
+	file_name = os.path.expanduser(file_name)
+	fd = open(file_name, 'r')
+	for line in fd:
+		line = line.strip()
+		if len(line) < 1 or line[0] == '#':
+			continue
+		if (not os.path.isfile(line)) or (not os.access(line, os.X_OK)):
+			print "Warning: Filter does not exist or is not executable: " + line
+			continue
+		filters.append(line)
+	if (len(filters) == 0):
+		print "Warning: No valid filters found"
+	return
 
 def create_config_dir():
 	try:
@@ -96,6 +111,8 @@ def print_cmds():
 
 def main():
 	sys.argv.pop(0)
+
+	load_filters(filter_file)
 
 	try:
 		init_repo(os.getcwd())
