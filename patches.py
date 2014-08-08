@@ -66,8 +66,8 @@ def do_list():
 	return 0
 
 def do_update():
-	print "Updating base to " + base
-	config.set(repo, "head", base)
+	print "Updating base to " + head
+	config.set(repo, "head", head)
 	store_config()
 	return 0
 
