@@ -33,6 +33,7 @@ def load_filters(file_name):
 		filters.append(line)
 	if (len(filters) == 0):
 		print "Warning: No valid filters found"
+	fd.close()
 	return
 
 def create_config_dir():
