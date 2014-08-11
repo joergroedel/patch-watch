@@ -16,5 +16,6 @@ function match_keyword {
 
 match_keyword "fix" "fix"
 match_keyword "Cc: stable@vger.kernel.org" "stable"
+match_keyword "CVE " "CVE SEC"
 
 exit 0
