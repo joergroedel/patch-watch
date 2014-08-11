@@ -5,6 +5,7 @@ import ConfigParser
 import subprocess
 import string
 import sys
+import sets
 import os
 
 config_dir  = '~/.patches/'
@@ -67,12 +68,34 @@ def init_repo(path):
 	load_config(config_file)
 	base = config.get(repo, "head").strip()
 
-def filter_match(commit):
-	ret = 0
-	for f in filters:
-		ret |= subprocess.call([f, commit])
-
+def parse_tags(output):
+	ret = sets.Set([ ])
+	lines = output.split('\n')
+	for line in lines:
+		line = line.strip()
+		tags = line.split(' ')
+		for tag in tags:
+			tag = tag.strip().upper()
+			if (len(tag) > 0):
+				ret.add(tag)
 	return ret
+
+def apply_filters(commit):
+	tags = sets.Set([ ])
+	for f in filters:
+		output = subprocess.check_output([f, commit]).strip()
+		tags.update(parse_tags(output))
+
+	return tags;
+
+def print_commit(commit, subject, tags):
+	if (len(tags) == 0):
+		return
+	tag_str = ''
+	for tag in tags:
+		tag_str += " [" + tag + "]"
+	print "Commit: " + commit + " Subject: " + subject + " Tags: " + tag_str
+	return
 
 def do_list():
 	global base, head, repo;
@@ -89,9 +112,10 @@ def do_list():
 			continue
 		commits += 1
 		commit, subject = line.split(' ', 1);
-		if filter_match(commit):
+		tags = apply_filters(commit)
+		if (len(tags) > 0):
 			matches += 1
-			print "Commit: " + commit + " Subject: " + subject
+		print_commit(commit, subject, tags);
 
 	print "Commits: " + str(commits) + " Matches: " + str(matches)
 
