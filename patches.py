@@ -38,7 +38,7 @@ def load_commits(file_name):
 def match_commits(commit, subject, tags):
 	global commits
 	if (len(tags) == 0):
-		return
+		return False
 	if commit in commits:
 		return False
 	for tag in tags:
