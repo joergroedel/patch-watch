@@ -13,6 +13,8 @@ config_file = '~/.patches/repos'
 filter_file = '~/.patches/filters'
 git         = '/usr/bin/git'
 
+commit_file = '~/.patches/commits'
+
 repo = ''
 base = ''
 head = ''
@@ -20,6 +22,37 @@ head = ''
 config = ConfigParser.RawConfigParser()
 
 filters = [ ]
+commits = sets.Set()
+
+def load_commits(file_name):
+	file_name = os.path.expanduser(file_name)
+	if not os.path.isfile(file_name):
+		return
+	fd = open(file_name, 'r')
+	for line in fd:
+		line = line.strip().upper()
+		commits.add(line)
+	fd.close()
+	return
+
+def match_commits(commit, subject, tags):
+	global commits
+	if (len(tags) == 0):
+		return
+	if commit in commits:
+		return False
+	for tag in tags:
+		if len(tag) != 44:
+			continue
+		pos = tag.find(':')
+		if (pos == -1):
+			continue
+		tag, ref_commit = tag.split(':', 1)
+		if (tag != 'GIT'):
+			continue
+		if ref_commit in commits:
+			return True
+	return False
 
 def load_filters(file_name):
 	file_name = os.path.expanduser(file_name)
@@ -113,9 +146,9 @@ def do_list():
 		commits += 1
 		commit, subject = line.split(' ', 1);
 		tags = apply_filters(commit)
-		if (len(tags) > 0):
+		if match_commits(commit, subject, tags):
+			print_commit(commit, subject, tags)
 			matches += 1
-		print_commit(commit, subject, tags);
 
 	print "Commits: " + str(commits) + " Matches: " + str(matches)
 
@@ -138,6 +171,7 @@ def main():
 	sys.argv.pop(0)
 
 	load_filters(filter_file)
+	load_commits(commit_file)
 
 	try:
 		init_repo(os.getcwd())
