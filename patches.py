@@ -35,20 +35,20 @@ def load_commits(file_name):
 	fd.close()
 	return
 
-def match_commits(commit, subject, tags):
+def match_commits(commit, subject, markers):
 	global commits
-	if (len(tags) == 0):
+	if (len(markers) == 0):
 		return False
 	commit = commit.upper()
 	if commit in commits:
 		return False
-	for tag in tags:
-		if len(tag) != 44:
+	for mark in markers:
+		if len(mark) != 44:
 			continue
-		pos = tag.find(':')
+		pos = mark.find(':')
 		if (pos == -1):
 			continue
-		tag, ref_commit = tag.split(':', 1)
+		tag, ref_commit = mark.split(':', 1)
 		if (tag != 'GIT'):
 			continue
 		if ref_commit in commits:
@@ -102,33 +102,33 @@ def init_repo(path):
 	load_config(config_file)
 	base = config.get(repo, "head").strip()
 
-def parse_tags(output):
+def parse_markers(output):
 	ret = sets.Set([ ])
 	lines = output.split('\n')
 	for line in lines:
-		line = line.strip()
-		tags = line.split(' ')
-		for tag in tags:
-			tag = tag.strip().upper()
-			if (len(tag) > 0):
-				ret.add(tag)
+		line    = line.strip()
+		markers = line.split(' ')
+		for mark in markers:
+			mark = mark.strip().upper()
+			if (len(mark) > 0):
+				ret.add(mark)
 	return ret
 
 def apply_filters(commit):
-	tags = sets.Set([ ])
+	markers = sets.Set([ ])
 	for f in filters:
 		output = subprocess.check_output([f, commit]).strip()
-		tags.update(parse_tags(output))
+		markers.update(parse_markers(output))
 
-	return tags;
+	return markers;
 
-def print_commit(commit, subject, tags):
-	if (len(tags) == 0):
+def print_commit(commit, subject, markers):
+	if (len(markers) == 0):
 		return
-	tag_str = ''
-	for tag in tags:
-		tag_str += " [" + tag + "]"
-	print "Commit: " + commit + " Subject: " + subject + " Tags: " + tag_str
+	mark_str = ''
+	for mark in markers:
+		mark_str += " [" + mark + "]"
+	print "Commit: " + commit + " Subject: " + subject + " Tags: " + mark_str
 	return
 
 def do_list():
@@ -146,9 +146,9 @@ def do_list():
 			continue
 		commits += 1
 		commit, subject = line.split(' ', 1);
-		tags = apply_filters(commit)
-		if match_commits(commit, subject, tags):
-			print_commit(commit, subject, tags)
+		markers = apply_filters(commit)
+		if match_commits(commit, subject, markers):
+			print_commit(commit, subject, markers)
 			matches += 1
 
 	print "Commits: " + str(commits) + " Matches: " + str(matches)
