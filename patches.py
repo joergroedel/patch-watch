@@ -49,6 +49,8 @@ def match_commits(commit, subject, markers):
 		if (pos == -1):
 			continue
 		tag, ref_commit = mark.split(':', 1)
+		ref_commit = ref_commit.upper()
+		tag        = tag.upper()
 		if (tag != 'GIT'):
 			continue
 		if ref_commit in commits:
@@ -109,7 +111,7 @@ def parse_markers(output):
 		line    = line.strip()
 		markers = line.split(' ')
 		for mark in markers:
-			mark = mark.strip().upper()
+			mark = mark.strip()
 			if (len(mark) > 0):
 				ret.add(mark)
 	return ret
