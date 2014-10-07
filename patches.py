@@ -4,6 +4,7 @@
 import ConfigParser
 import subprocess
 import string
+import json
 import sys
 import sets
 import os
@@ -133,6 +134,28 @@ def print_commit(commit, subject, markers):
 	print "Commit: " + commit + " Subject: " + subject + " Tags: " + mark_str
 	return
 
+def make_dict(commit, subject, markers):
+	d = dict();
+	d['id']      = commit;
+	d['subject'] = subject;
+	tags  = list();
+	refs  = list();
+	paths = list();
+	for mark in markers:
+		pos = mark.find(':');
+		if (pos == -1):
+			tags.append(mark.strip());
+			continue;
+		t, v = mark.split(':', 1);
+		if t == 'git':
+			refs.append(v);
+		elif t == 'path':
+			paths.append(v);
+	d['tags'] = tags;
+	d['refs'] = refs;
+	d['paths'] = paths;
+	return d;
+
 def do_list():
 	global base, head, repo;
 
@@ -141,19 +164,16 @@ def do_list():
 		return 0;
 	output = subprocess.check_output([git, 'log', '--reverse', '--no-merges', '-s', '--format=%H %s', base + ".." + head])
 	lines = output.split('\n');
-	commits = matches = 0;
+	data = list();
 	for line in lines:
 		line = line.strip();
 		if line == '':
 			continue
-		commits += 1
 		commit, subject = line.split(' ', 1);
-		markers = apply_filters(commit)
-		if match_commits(commit, subject, markers):
-			print_commit(commit, subject, markers)
-			matches += 1
+		markers = apply_filters(commit);
+		data.append(make_dict(commit, subject, markers));
 
-	print "Commits: " + str(commits) + " Matches: " + str(matches)
+	print json.dumps(data);
 
 	return 0
 
