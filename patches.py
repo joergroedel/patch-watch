@@ -196,6 +196,11 @@ def do_list():
 
 	return 0
 
+def write_db_file(file_name, data):
+	file_name = os.path.expanduser(file_name);
+	with open(file_name, 'w') as db_file:
+		json.dump(data, db_file);
+	return;
 
 def do_init(argv):
 	if len(argv) != 2:
@@ -208,7 +213,14 @@ def do_init(argv):
 	if (watches.has_section(name)):
 		print name + " already exists";
 
+	db_file = config_dir + name + '.json'
+	output = subprocess.check_output([git, 'log', '--format=%H %s', base + '~1..' + base]);
+	data = process_commits(output.split('\n'));
+	write_db_file(db_file, data);
+
 	watches.add_section(name);
+	watches.set(name, 'database', db_file)
+
 	store_watches(watches_file, watches);
 
 def do_update():
