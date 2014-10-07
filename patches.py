@@ -9,10 +9,11 @@ import sys
 import sets
 import os
 
-config_dir  = '~/.patches/'
-config_file = '~/.patches/repos'
-filter_file = '~/.patches/filters'
-git         = '/usr/bin/git'
+config_dir   = '~/.patches/'
+config_file  = '~/.patches/repos'
+watches_file = '~/.patches/config'
+filter_file  = '~/.patches/filters'
+git          = '/usr/bin/git'
 
 commit_file = '~/.patches/commits'
 
@@ -20,7 +21,8 @@ repo = ''
 base = ''
 head = ''
 
-config = ConfigParser.RawConfigParser()
+config = ConfigParser.RawConfigParser();
+watches = ConfigParser.RawConfigParser();
 
 filters = [ ]
 commits = sets.Set()
@@ -97,6 +99,18 @@ def load_config(file_name):
 		config.add_section(repo)
 		config.set(repo, 'head', head)
 		store_config()
+
+def load_watches(file_name, watches):
+	file_name = os.path.expanduser(file_name);
+	watches.read(file_name);
+	return;
+
+def store_watches(file_name, watches):
+	create_config_dir();
+	file_name = os.path.expanduser(file_name)
+	with open(file_name, 'w') as cfg_file:
+		watches.write(cfg_file);
+	return;
 
 def init_repo(path):
 	global git, repo, head, base
@@ -177,6 +191,21 @@ def do_list():
 
 	return 0
 
+
+def do_init(argv):
+	if len(argv) != 2:
+		print "Init needs 2 arguments: name base";
+		return 1;
+
+	name = argv.pop(0);
+	base = argv.pop(0);
+
+	if (watches.has_section(name)):
+		print name + " already exists";
+
+	watches.add_section(name);
+	store_watches(watches_file, watches);
+
 def do_update():
 	print "Updating base to " + head
 	config.set(repo, "head", head)
@@ -211,6 +240,8 @@ def main():
 		return do_list()
 	elif (cmd == 'update'):
 		return do_update()
+	elif (cmd == 'init'):
+		return do_init(sys.argv);
 	else:
 	 	return print_cmds()
 
