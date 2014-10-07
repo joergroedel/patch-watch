@@ -170,10 +170,18 @@ def make_dict(commit, subject, markers):
 	d['paths'] = paths;
 	return d;
 
-def process_commits(lines):
+def process_commits(lines, progress=False):
 	data = list();
 
+	current = 0;
+	number  = len(lines);
 	for line in lines:
+		if progress:
+			current += 1;
+			percent = float(current) / float(number);
+			message = '\rProcessing {c}/{n} ({p:.2%} done)'.format(c=current, n=number, p=percent);
+			print message,
+
 		line = line.strip();
 		if line == '':
 			continue
