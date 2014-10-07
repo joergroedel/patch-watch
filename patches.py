@@ -170,15 +170,9 @@ def make_dict(commit, subject, markers):
 	d['paths'] = paths;
 	return d;
 
-def do_list():
-	global base, head, repo;
-
-	# git log --no-merges --reverse -s --format="%H %s"
-	if (base == head):
-		return 0;
-	output = subprocess.check_output([git, 'log', '--reverse', '--no-merges', '-s', '--format=%H %s', base + ".." + head])
-	lines = output.split('\n');
+def process_commits(lines):
 	data = list();
+
 	for line in lines:
 		line = line.strip();
 		if line == '':
@@ -187,7 +181,18 @@ def do_list():
 		markers = apply_filters(commit);
 		data.append(make_dict(commit, subject, markers));
 
-	print json.dumps(data);
+	return data;
+
+def do_list():
+	global base, head, repo;
+
+	# git log --no-merges --reverse -s --format="%H %s"
+	if (base == head):
+		return 0;
+	output = subprocess.check_output([git, 'log', '--reverse', '--no-merges', '-s', '--format=%H %s', base + ".." + head])
+	lines = output.split('\n');
+
+	print json.dumps(process_commits(lines));
 
 	return 0
 
