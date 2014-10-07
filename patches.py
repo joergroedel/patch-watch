@@ -212,6 +212,7 @@ def do_init(argv):
 
 	if (watches.has_section(name)):
 		print name + " already exists";
+		return 1;
 
 	db_file = config_dir + name + '.json'
 	output = subprocess.check_output([git, 'log', '--format=%H %s', base + '~1..' + base]);
@@ -222,6 +223,8 @@ def do_init(argv):
 	watches.set(name, 'database', db_file)
 
 	store_watches(watches_file, watches);
+
+	return 0;
 
 def do_update():
 	print "Updating base to " + head
@@ -241,6 +244,7 @@ def main():
 
 	load_filters(filter_file)
 	load_commits(commit_file)
+	load_watches(watches_file, watches);
 
 	try:
 		init_repo(os.getcwd())
