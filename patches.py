@@ -210,6 +210,12 @@ def write_db_file(file_name, data):
 		json.dump(data, db_file);
 	return;
 
+def read_db_file(file_name):
+	file_name = os.path.expanduser(file_name);
+	with open(file_name, 'r') as db_file:
+		data = json.load(db_file);
+	return data;
+
 def do_init(argv):
 	if len(argv) != 2:
 		print "Init needs 2 arguments: name base";
@@ -234,11 +240,31 @@ def do_init(argv):
 
 	return 0;
 
-def do_update():
-	print "Updating base to " + head
-	config.set(repo, "head", head)
-	store_config()
-	return 0
+def do_update(argv):
+
+	if len(argv) < 1:
+		print "Update needs database as parameter"
+		return 1;
+	name = argv.pop(0);
+
+	head = 'HEAD';
+	if len(argv) > 0:
+		head = argv.pop(0);
+
+	if not watches.has_section(name):
+		print "Unknown database: " + name;
+		return 1;
+
+	db_file = watches.get(name, 'database');
+	data = read_db_file(db_file);
+	last_commit = data[len(data)-1]['id'];
+
+	output = subprocess.check_output([git, 'log', '--reverse', '--no-merges', '-s', '--format=%H %s', last_commit + ".." + head])
+	ndata = process_commits(output.split('\n'), progress=True);
+
+	write_db_file(db_file, data + ndata);
+
+	return 0;
 
 def print_cmds():
 	print "Available commands:"
@@ -268,7 +294,7 @@ def main():
 	if (cmd == 'list'):
 		return do_list()
 	elif (cmd == 'update'):
-		return do_update()
+		return do_update(sys.argv)
 	elif (cmd == 'init'):
 		return do_init(sys.argv);
 	else:
