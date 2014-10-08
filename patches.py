@@ -3,6 +3,7 @@
 
 import ConfigParser
 import subprocess
+import fnmatch
 import string
 import json
 import sys
@@ -42,6 +43,7 @@ def load_maint_file(file_name):
 			item['name']    = line;
 			item['mail']    = list();
 			item['pattern'] = list();
+			item['commits'] = list();
 		elif (store == True):
 			tag, value = line.split(':',1);
 			tag        = tag.strip();
@@ -286,6 +288,36 @@ def do_update(argv):
 
 	return 0;
 
+def match_file_pattern(maint, item):
+	for pattern in maint['pattern']:
+		for path in item['paths']:
+			if (fnmatch.fnmatch(path, pattern)):
+				return True;
+
+	return False;
+
+def add_item_to_maintainer(maintainers, item):
+	for maintainer in maintainers:
+		if (match_file_pattern(maintainer, item)):
+			maintainer['commits'].append(item);
+			return;
+
+	return
+
+def print_item_list(results, indent=''):
+	for item in results:
+		print '{0}{1} {2}'.format(indent, item['id'], item['subject']);
+
+def print_maintainers(maintainers):
+	for maint in maintainers:
+		if (len(maint['commits']) == 0):
+			continue;
+		print maint['name'];
+		print_item_list(maint['commits'], indent="        ");
+		print;
+
+	return;
+
 def do_match(argv):
 	if len(argv) < 1:
 		print "Match needs database as parameter"
@@ -319,15 +351,28 @@ def do_match(argv):
 	for c in bl:
 		bl_set.add(c.upper());
 
+	use_maintainers = False;
 	if (watches.has_option(name, 'maintainers')):
 		file_name = watches.get(name, 'maintainers');
 		file_name = os.path.expanduser(file_name);
 		maintainers = load_maint_file(file_name);
+		use_maintainers = True;
+	else:
+		results = list();
 
 	for item in data:
 		if not match_commit(item, commit_set, bl_set):
 			continue;
-		print '{0} {1}'.format(item['id'], item['subject']);
+
+		if (use_maintainers):
+			add_item_to_maintainer(maintainers, item);
+		else:
+			results.append(item);
+
+	if (use_maintainers):
+		print_maintainers(maintainers);
+	else:
+		print_item_list(results);
 
 	return 0;
 
