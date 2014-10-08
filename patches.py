@@ -56,6 +56,13 @@ def load_commit_list(file_name):
 
 	return parse_commit_list(lines);
 
+def load_black_list(file_name):
+	ret = list();
+	if (os.path.isfile(file_name)):
+		return read_db_file(file_name);
+	else:
+		return list();
+
 def match_commit(item, commits):
 	if (len(item['refs']) == 0):
 		return False;
@@ -298,12 +305,41 @@ def do_commit_list(argv):
 
 	return 0;
 
+def do_black_list(argv):
+	if len(argv) < 1:
+		print "commit-list needs database and (optional) file as parameter";
+		return 1;
+
+	name = argv.pop(0);
+
+	if not watches.has_section(name):
+		print "Unknown database: " + name;
+		return 1;
+
+	if watches.has_option(name, 'blacklist'):
+		bl_file_name = watches.get(name, 'blacklist');
+	else:
+		bl_file_name = os.path.expanduser(config_dir + name + '-blacklist.json');
+
+	bl = load_black_list(bl_file_name);
+
+	bl += parse_commit_list(argv);
+	print 'Blacklisting {0} commits'.format(len(bl));
+
+	write_db_file(bl_file_name, bl);
+
+	watches.set(name, 'blacklist', bl_file_name);
+	store_watches(watches_file, watches);
+
+	return 0;
+
 def print_cmds():
 	print "Available commands:"
 	print "  init,i          Initialize a commit tracking database"
 	print "  update,up       Update a commit tracking database"
 	print "  match,m         Match commits in a database against a commit list"
 	print "  commit-list,cl  Set commit list file for a tracking database"
+	print "  black-list,bl   Add commits to the blacklist for a database"
 	return 0
 
 def main():
@@ -325,6 +361,8 @@ def main():
 		return do_match(sys.argv);
 	elif (cmd == 'commit-list' or cmd == 'cl'):
 		return do_commit_list(sys.argv);
+	elif (cmd == 'black-list' or cmd == 'bl'):
+		return do_black_list(sys.argv);
 	else:
 	 	return print_cmds()
 
