@@ -10,7 +10,6 @@ import sets
 import os
 
 config_dir   = '~/.patches/'
-config_file  = '~/.patches/repos'
 watches_file = '~/.patches/config'
 filter_file  = '~/.patches/filters'
 git          = '/usr/bin/git'
@@ -21,7 +20,6 @@ repo = ''
 base = ''
 head = ''
 
-config = ConfigParser.RawConfigParser();
 watches = ConfigParser.RawConfigParser();
 
 filters = [ ]
@@ -74,23 +72,6 @@ def create_config_dir():
 	except OSError:
 		pass
 
-def store_config():
-	create_config_dir()
-	file_name = os.path.expanduser(config_file)
-	with open(file_name, 'w') as cfg_file:
-		config.write(cfg_file)
-
-
-def load_config(file_name):
-	global repo, head, base
-	file_name = os.path.expanduser(file_name)
-	config.read(file_name)
-	if (not config.has_section(repo)):
-		print 'Initializing cache for ' + repo
-		config.add_section(repo)
-		config.set(repo, 'head', head)
-		store_config()
-
 def load_watches(file_name, watches):
 	file_name = os.path.expanduser(file_name);
 	if not os.path.isfile(file_name):
@@ -104,13 +85,6 @@ def store_watches(file_name, watches):
 	with open(file_name, 'w') as cfg_file:
 		watches.write(cfg_file);
 	return;
-
-def init_repo(path):
-	global git, repo, head, base
-	repo = path
-	head = subprocess.check_output([git, 'show', '-s', '--format=%H', 'HEAD']).strip()
-	load_config(config_file)
-	base = config.get(repo, "head").strip()
 
 def parse_markers(output):
 	ret = sets.Set([ ])
@@ -292,12 +266,6 @@ def main():
 	load_filters(filter_file)
 	load_commits(commit_file)
 	load_watches(watches_file, watches);
-
-	try:
-		init_repo(os.getcwd())
-	except ConfigParser.Error:
-		print "Error loading config file " + config_file
-		return 1
 
 	cmd = "list"
 
