@@ -70,8 +70,7 @@ def load_commit_list(file_name):
 
 	return parse_commit_list(lines);
 
-def match_commit(item):
-	global commits;
+def match_commit(item, commits):
 	if (len(item['refs']) == 0):
 		return False;
 	commit = item['id'].upper();
@@ -267,8 +266,19 @@ def do_match(argv):
 	db_file = watches.get(name, 'database');
 	data    = read_db_file(db_file);
 
+	if (not watches.has_option(name, 'commit-list')):
+		print "No commit-list available for " + name;
+		return 1;
+
+	commit_file = watches.get(name, 'commit-list');
+	commit_list = read_db_file(commit_file);
+
+	commit_set = set();
+	for c in commit_list:
+		commit_set.add(c.upper());
+
 	for item in data:
-		if not match_commit(item):
+		if not match_commit(item, commit_set):
 			continue;
 		print '{0} {1}'.format(item['id'], item['subject']);
 
