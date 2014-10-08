@@ -18,6 +18,44 @@ watches = ConfigParser.RawConfigParser();
 
 filters = [ ]
 
+def load_maint_file(file_name):
+	maintainers = list();
+
+	if (not os.path.isfile(file_name)):
+		print "No such file " + file_name;
+		return list();
+
+	store = False;
+	fd = open(file_name, 'r');
+	for line in fd:
+		line = line.strip();
+		if (len(line) == 0):
+			continue;
+		if (line[0] == '#'):
+			continue;
+		pos = line.find(':');
+		if (pos == -1):
+			if (store == True):
+				maintainers.append(item);
+			store = True;
+			item = dict();
+			item['name']    = line;
+			item['mail']    = list();
+			item['pattern'] = list();
+		elif (store == True):
+			tag, value = line.split(':',1);
+			tag        = tag.strip();
+			value      = value.strip();
+			if (tag == 'F'):
+				item['pattern'].append(value);
+			elif (tag == 'M'):
+				item['mail'].append(value);
+	fd.close();
+	if (store == True):
+		maintainers.append(item);
+
+	return maintainers;
+
 def process_line(line, data):
 	tokens = line.split(' ');
 	for token in tokens:
@@ -280,6 +318,11 @@ def do_match(argv):
 	bl_set = set();
 	for c in bl:
 		bl_set.add(c.upper());
+
+	if (watches.has_option(name, 'maintainers')):
+		file_name = watches.get(name, 'maintainers');
+		file_name = os.path.expanduser(file_name);
+		maintainers = load_maint_file(file_name);
 
 	for item in data:
 		if not match_commit(item, commit_set, bl_set):
