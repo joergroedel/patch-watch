@@ -102,6 +102,8 @@ def load_config(file_name):
 
 def load_watches(file_name, watches):
 	file_name = os.path.expanduser(file_name);
+	if not os.path.isfile(file_name):
+		return;
 	watches.read(file_name);
 	return;
 
