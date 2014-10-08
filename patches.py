@@ -238,9 +238,9 @@ def do_match(argv):
 
 def print_cmds():
 	print "Available commands:"
-	print "  list           List commits since last update"
-	print "  update         Update base to current HEAD"
-	print "  help           Show this help text"
+	print "  init		Initialize a commit tracking database"
+	print "  update         Update a commit tracking database"
+	print "  match          Match commits in a database against a commit list"
 	return 0
 
 def main():
