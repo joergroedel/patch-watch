@@ -32,6 +32,44 @@ def load_commits(file_name):
 	fd.close()
 	return
 
+def process_line(line, data):
+	tokens = line.split(' ');
+	for token in tokens:
+		token = token.strip(' \t\r:;.,<>[]()-_=+~')
+		if (len(token) != 40):
+			continue
+		is_hash = True
+		for c in token:
+			f = string.find(string.hexdigits, c)
+			if f == -1:
+				is_hash = False
+				break
+		if is_hash:
+			data.append(token);
+	return
+
+def parse_commit_list(lines):
+	data = list();
+	for line in lines:
+		process_line(line, data);
+
+	return data;
+
+def load_commit_list(file_name):
+	if (len(file_name) > 0):
+		file_name = os.path.expanduser(file_name);
+		fd = open(file_name, 'r');
+	else:
+		fd = sys.stdin;
+
+	lines = list();
+	for line in fd:
+		line = line.strip();
+		lines.append(line);
+	fd.close()
+
+	return parse_commit_list(lines);
+
 def match_commit(item):
 	global commits;
 	if (len(item['refs']) == 0):
@@ -236,11 +274,40 @@ def do_match(argv):
 
 	return 0;
 
+def do_commit_list(argv):
+	if len(argv) < 1:
+		print "commit-list needs database and (optional) file as parameter";
+		return 1;
+
+	name = argv.pop(0);
+
+	if not watches.has_section(name):
+		print "Unknown database: " + name;
+		return 1;
+
+	file_name = "";
+	if (len(argv) > 0):
+		file_name = argv.pop(0);
+
+	data = load_commit_list(file_name);
+	print 'Loaded {0} commit-ids from list'.format(len(data));
+
+	file_name = os.path.expanduser(config_dir + name + "-commits.json");
+
+	with open(file_name, 'w') as fd:
+		json.dump(data, fd, indent=8);
+
+	watches.set(name, "commit-list", file_name);
+	store_watches(watches_file, watches);
+
+	return 0;
+
 def print_cmds():
 	print "Available commands:"
 	print "  init		Initialize a commit tracking database"
 	print "  update         Update a commit tracking database"
 	print "  match          Match commits in a database against a commit list"
+	print "  commit-list    Set commit list file for a tracking database"
 	return 0
 
 def main():
@@ -261,6 +328,8 @@ def main():
 		return do_init(sys.argv);
 	elif (cmd == 'match'):
 		return do_match(sys.argv);
+	elif (cmd == 'commit-list'):
+		return do_commit_list(sys.argv);
 	else:
 	 	return print_cmds()
 
