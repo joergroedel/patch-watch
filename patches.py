@@ -209,7 +209,7 @@ def do_list():
 def write_db_file(file_name, data):
 	file_name = os.path.expanduser(file_name);
 	with open(file_name, 'w') as db_file:
-		json.dump(data, db_file);
+		json.dump(data, db_file, indent=8);
 	return;
 
 def read_db_file(file_name):
