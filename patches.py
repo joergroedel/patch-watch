@@ -16,10 +16,6 @@ git          = '/usr/bin/git'
 
 commit_file = '~/.patches/commits'
 
-repo = ''
-base = ''
-head = ''
-
 watches = ConfigParser.RawConfigParser();
 
 filters = [ ]
@@ -158,19 +154,6 @@ def process_commits(lines, progress=False):
 
 	return data;
 
-def do_list():
-	global base, head, repo;
-
-	# git log --no-merges --reverse -s --format="%H %s"
-	if (base == head):
-		return 0;
-	output = subprocess.check_output([git, 'log', '--reverse', '--no-merges', '-s', '--format=%H %s', base + ".." + head])
-	lines = output.split('\n');
-
-	print json.dumps(process_commits(lines));
-
-	return 0
-
 def write_db_file(file_name, data):
 	file_name = os.path.expanduser(file_name);
 	with open(file_name, 'w') as db_file:
@@ -267,14 +250,12 @@ def main():
 	load_commits(commit_file)
 	load_watches(watches_file, watches);
 
-	cmd = "list"
-
 	if (len(sys.argv) >= 1):
 		cmd = sys.argv.pop(0)
+	else:
+		cmd = '';
 
-	if (cmd == 'list'):
-		return do_list()
-	elif (cmd == 'update'):
+	if (cmd == 'update'):
 		return do_update(sys.argv)
 	elif (cmd == 'init'):
 		return do_init(sys.argv);
