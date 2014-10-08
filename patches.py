@@ -38,27 +38,18 @@ def load_commits(file_name):
 	fd.close()
 	return
 
-def match_commits(commit, subject, markers):
-	global commits
-	if (len(markers) == 0):
-		return False
-	commit = commit.upper()
+def match_commit(item):
+	global commits;
+	if (len(item['refs']) == 0):
+		return False;
+	commit = item['id'].upper();
 	if commit in commits:
-		return False
-	for mark in markers:
-		if len(mark) != 44:
-			continue
-		pos = mark.find(':')
-		if (pos == -1):
-			continue
-		tag, ref_commit = mark.split(':', 1)
-		ref_commit = ref_commit.upper()
-		tag        = tag.upper()
-		if (tag != 'GIT'):
-			continue
+		return False;
+	for ref in item['refs']:
+		ref_commit = ref.upper();
 		if ref_commit in commits:
-			return True
-	return False
+			return True;
+	return False;
 
 def load_filters(file_name):
 	file_name = os.path.expanduser(file_name)
@@ -268,6 +259,26 @@ def do_update(argv):
 
 	return 0;
 
+def do_match(argv):
+	if len(argv) < 1:
+		print "Match needs database as parameter"
+		return 1;
+	name = argv.pop(0);
+
+	if not watches.has_section(name):
+		print "Unknown database: " + name;
+		return 1;
+
+	db_file = watches.get(name, 'database');
+	data    = read_db_file(db_file);
+
+	for item in data:
+		if not match_commit(item):
+			continue;
+		print '{0} {1}'.format(item['id'], item['subject']);
+
+	return 0;
+
 def print_cmds():
 	print "Available commands:"
 	print "  list           List commits since last update"
@@ -299,6 +310,8 @@ def main():
 		return do_update(sys.argv)
 	elif (cmd == 'init'):
 		return do_init(sys.argv);
+	elif (cmd == 'match'):
+		return do_match(sys.argv);
 	else:
 	 	return print_cmds()
 
