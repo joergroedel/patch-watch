@@ -63,11 +63,13 @@ def load_black_list(file_name):
 	else:
 		return list();
 
-def match_commit(item, commits):
+def match_commit(item, commits, blacklist):
 	if (len(item['refs']) == 0):
 		return False;
 	commit = item['id'].upper();
 	if commit in commits:
+		return False;
+	if commit in blacklist:
 		return False;
 	for ref in item['refs']:
 		ref_commit = ref.upper();
@@ -270,8 +272,17 @@ def do_match(argv):
 	for c in commit_list:
 		commit_set.add(c.upper());
 
+	if (watches.has_option(name, 'blacklist')):
+		bl = load_black_list(watches.get(name, 'blacklist'));
+	else:
+		bl = list()
+
+	bl_set = set();
+	for c in bl:
+		bl_set.add(c.upper());
+
 	for item in data:
-		if not match_commit(item, commit_set):
+		if not match_commit(item, commit_set, bl_set):
 			continue;
 		print '{0} {1}'.format(item['id'], item['subject']);
 
