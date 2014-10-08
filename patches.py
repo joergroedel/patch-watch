@@ -14,23 +14,9 @@ watches_file = '~/.patches/config'
 filter_file  = '~/.patches/filters'
 git          = '/usr/bin/git'
 
-commit_file = '~/.patches/commits'
-
 watches = ConfigParser.RawConfigParser();
 
 filters = [ ]
-commits = sets.Set()
-
-def load_commits(file_name):
-	file_name = os.path.expanduser(file_name)
-	if not os.path.isfile(file_name):
-		return
-	fd = open(file_name, 'r')
-	for line in fd:
-		line = line.strip().upper()
-		commits.add(line)
-	fd.close()
-	return
 
 def process_line(line, data):
 	tokens = line.split(' ');
@@ -324,7 +310,6 @@ def main():
 	sys.argv.pop(0)
 
 	load_filters(filter_file)
-	load_commits(commit_file)
 	load_watches(watches_file, watches);
 
 	if (len(sys.argv) >= 1):
