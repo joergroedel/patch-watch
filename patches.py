@@ -300,10 +300,10 @@ def do_commit_list(argv):
 
 def print_cmds():
 	print "Available commands:"
-	print "  init		Initialize a commit tracking database"
-	print "  update         Update a commit tracking database"
-	print "  match          Match commits in a database against a commit list"
-	print "  commit-list    Set commit list file for a tracking database"
+	print "  init,i          Initialize a commit tracking database"
+	print "  update,up       Update a commit tracking database"
+	print "  match,m         Match commits in a database against a commit list"
+	print "  commit-list,cl  Set commit list file for a tracking database"
 	return 0
 
 def main():
@@ -317,13 +317,13 @@ def main():
 	else:
 		cmd = '';
 
-	if (cmd == 'update'):
+	if (cmd == 'update' or cmd == 'up'):
 		return do_update(sys.argv)
-	elif (cmd == 'init'):
+	elif (cmd == 'init' or cmd == 'i'):
 		return do_init(sys.argv);
-	elif (cmd == 'match'):
+	elif (cmd == 'match' or cmd == 'm'):
 		return do_match(sys.argv);
-	elif (cmd == 'commit-list'):
+	elif (cmd == 'commit-list' or cmd == 'cl'):
 		return do_commit_list(sys.argv);
 	else:
 	 	return print_cmds()
