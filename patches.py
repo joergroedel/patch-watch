@@ -104,7 +104,7 @@ def load_black_list(file_name):
 	else:
 		return list();
 
-def match_commit(item, commits, blacklist):
+def match_commit(item, commits, blacklist, match_set):
 	if (len(item['refs']) == 0):
 		return False;
 	commit = item['id'].upper();
@@ -112,6 +112,14 @@ def match_commit(item, commits, blacklist):
 		return False;
 	if commit in blacklist:
 		return False;
+	if len(match_set) > 0:
+		for match_tag in match_set:
+			found = False;
+			for tag in item['tags']:
+				if (match_tag.upper() == tag.upper()):
+					found = True;
+			if (found == False):
+				return False;
 	for ref in item['refs']:
 		ref_commit = ref.upper();
 		if ref_commit in commits:
@@ -321,16 +329,19 @@ def print_maintainers(maintainers):
 
 def do_match(argv):
 	try:
-		opts, args = getopt.getopt(argv, 'bg');
+		opts, args = getopt.getopt(argv, 't:bg');
 	except getopt.GetoptError, err:
 		print str(err);
 		return 1;
 
 	no_blacklist = False;
 	no_grouping  = False;
+	match_tags   = list();
 
 	for o, a in opts:
-		if o == '-b':
+		if o == '-t':
+			match_tags.append(a);
+		elif o == '-b':
 			no_blacklist = True;
 		elif o == '-g':
 			no_grouping  = True;
@@ -341,6 +352,10 @@ def do_match(argv):
 		print "Match needs database as parameter"
 		return 1;
 	name = args.pop(0);
+
+	match_set = set();
+	for tag in match_tags:
+		match_set.add(tag);
 
 	if not watches.has_section(name):
 		print "Unknown database: " + name;
@@ -379,7 +394,7 @@ def do_match(argv):
 		results = list();
 
 	for item in data:
-		if not match_commit(item, commit_set, bl_set):
+		if not match_commit(item, commit_set, bl_set, match_set):
 			continue;
 
 		if (use_maintainers):
