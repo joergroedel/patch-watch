@@ -4,6 +4,7 @@
 import ConfigParser
 import subprocess
 import fnmatch
+import getopt
 import string
 import json
 import sys
@@ -319,10 +320,27 @@ def print_maintainers(maintainers):
 	return;
 
 def do_match(argv):
-	if len(argv) < 1:
+	try:
+		opts, args = getopt.getopt(argv, 'bg');
+	except getopt.GetoptError, err:
+		print str(err);
+		return 1;
+
+	no_blacklist = False;
+	no_grouping  = False;
+
+	for o, a in opts:
+		if o == '-b':
+			no_blacklist = True;
+		elif o == '-g':
+			no_grouping  = True;
+		else:
+			assert False;
+
+	if len(args) < 1:
 		print "Match needs database as parameter"
 		return 1;
-	name = argv.pop(0);
+	name = args.pop(0);
 
 	if not watches.has_section(name):
 		print "Unknown database: " + name;
@@ -342,7 +360,7 @@ def do_match(argv):
 	for c in commit_list:
 		commit_set.add(c.upper());
 
-	if (watches.has_option(name, 'blacklist')):
+	if (no_blacklist == False and watches.has_option(name, 'blacklist')):
 		bl = load_black_list(watches.get(name, 'blacklist'));
 	else:
 		bl = list()
@@ -352,7 +370,7 @@ def do_match(argv):
 		bl_set.add(c.upper());
 
 	use_maintainers = False;
-	if (watches.has_option(name, 'maintainers')):
+	if (no_grouping == False and watches.has_option(name, 'maintainers')):
 		file_name = watches.get(name, 'maintainers');
 		file_name = os.path.expanduser(file_name);
 		maintainers = load_maint_file(file_name);
