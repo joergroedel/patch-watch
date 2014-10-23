@@ -411,6 +411,15 @@ def do_match(argv):
 
 	return 0;
 
+def save_commit_list(name, commits):
+	file_name = os.path.expanduser(config_dir + name + "-commits.json");
+
+	with open(file_name, 'w') as fd:
+		json.dump(commits, fd, indent=8);
+
+	watches.set(name, "commit-list", file_name);
+	store_watches(watches_file, watches);
+
 def do_commit_list(argv):
 	if len(argv) < 1:
 		print "commit-list needs database and (optional) file as parameter";
@@ -429,13 +438,7 @@ def do_commit_list(argv):
 	data = load_commit_list(file_name);
 	print 'Loaded {0} commit-ids from list'.format(len(data));
 
-	file_name = os.path.expanduser(config_dir + name + "-commits.json");
-
-	with open(file_name, 'w') as fd:
-		json.dump(data, fd, indent=8);
-
-	watches.set(name, "commit-list", file_name);
-	store_watches(watches_file, watches);
+	save_commit_list(name, data);
 
 	return 0;
 
