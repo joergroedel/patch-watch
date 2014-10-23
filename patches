@@ -315,16 +315,41 @@ def add_item_to_maintainer(maintainers, item):
 
 	return
 
-def print_item_list(results, committers, indent=''):
+def  add_item_to_people(people, item, committers):
+	people_set = set()
+	for ref in item['refs']:
+		if ref.upper() in committers:
+			people_set.add(committers[ref.upper()]);
+
+	for p in people_set:
+		if p not in people:
+			people[p] = list();
+		people[p].append(item);
+
+	return;
+
+
+def print_item_list(results, committers = list(), indent=''):
+	no_names = False;
+	if (len(committers) == 0):
+		no_names = True;
+
 	for item in results:
-		people_set = set()
-		people     = '';
-		for ref in item['refs']:
-			if ref.upper() in committers:
-				people_set.add(committers[ref.upper()]);
-		for p in people_set:
-			people += " " + p;
-		print '{0}{1} {2} ({3})'.format(indent, item['id'], item['subject'], people.strip());
+		if no_names:
+			line = '{0}{1} {2}'.format(indent, item['id'], item['subject']);
+		else:
+			people_set = set()
+			people     = '';
+			for ref in item['refs']:
+				if ref.upper() in committers:
+					people_set.add(committers[ref.upper()]);
+			for p in people_set:
+				people += " " + p;
+		        line = '{0}{1} {2} ({3})'.format(indent, item['id'], item['subject'], people.strip());
+
+		print line;
+
+	return;
 
 def print_maintainers(maintainers, committers):
 	for maint in maintainers:
@@ -336,15 +361,22 @@ def print_maintainers(maintainers, committers):
 
 	return;
 
+def print_people(people):
+	for p in people:
+		print '{0} ({1}):'.format(p, len(people[p]));
+		print_item_list(people[p], indent="        ");
+		print;
+
 def do_match(argv):
 	try:
-		opts, args = getopt.getopt(argv, 't:bg');
+		opts, args = getopt.getopt(argv, 't:bgp');
 	except getopt.GetoptError, err:
 		print str(err);
 		return 1;
 
 	no_blacklist = False;
 	no_grouping  = False;
+	group_people = False;
 	match_tags   = list();
 
 	for o, a in opts:
@@ -354,6 +386,8 @@ def do_match(argv):
 			no_blacklist = True;
 		elif o == '-g':
 			no_grouping  = True;
+		elif o == '-p':
+			group_people = True;
 		else:
 			assert False;
 
@@ -361,6 +395,10 @@ def do_match(argv):
 		print "Match needs database as parameter"
 		return 1;
 	name = args.pop(0);
+
+	if (no_grouping and group_people):
+		print "Only one of option of -g and -p is allowed";
+		return 1;
 
 	match_set = set();
 	for tag in match_tags:
@@ -396,7 +434,7 @@ def do_match(argv):
 		bl_set.add(c.upper());
 
 	use_maintainers = False;
-	if (no_grouping == False and watches.has_option(name, 'maintainers')):
+	if (no_grouping == False and group_people == False and watches.has_option(name, 'maintainers')):
 		file_name = watches.get(name, 'maintainers');
 		file_name = os.path.expanduser(file_name);
 		maintainers = load_maint_file(file_name);
@@ -404,16 +442,22 @@ def do_match(argv):
 	else:
 		results = list();
 
+	people_items = dict();
+
 	for item in data:
 		if not match_commit(item, commit_set, bl_set, match_set):
 			continue;
 
 		if (use_maintainers):
 			add_item_to_maintainer(maintainers, item);
+		elif group_people:
+			add_item_to_people(people_items, item, committers);
 		else:
 			results.append(item);
 
-	if (use_maintainers):
+	if (group_people):
+		print_people(people_items);
+	elif (use_maintainers):
 		print_maintainers(maintainers, committers);
 	else:
 		print_item_list(results, committers);
