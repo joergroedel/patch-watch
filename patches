@@ -481,13 +481,14 @@ def parse_patch_file(file_name):
 		if (len(parts) < 2):
 			continue;
 		token = parts.pop(0);
-		if (token.upper() == 'GIT-COMMIT'):
+		token = token.upper();
+		if (token == 'GIT-COMMIT'):
 			for token in parts:
 				token = token.strip();
 				if is_git_commit(token):
 					temp_list.append(token);
 					break;
-		if (token.upper() == 'SIGNED-OFF-BY'):
+		if (token == 'SIGNED-OFF-BY' or token == 'ACKED-BY'):
 			email = find_committer(parts.pop(0));
 			if (len(email) > 0):
 				committer = email;
