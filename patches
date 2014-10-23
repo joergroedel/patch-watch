@@ -442,6 +442,65 @@ def do_commit_list(argv):
 
 	return 0;
 
+def parse_patch_file(file_name, lst):
+	fd = open(file_name, 'r');
+
+	for line in fd:
+		parts = line.split(':');
+		if (len(parts) < 2):
+			continue;
+		token = parts.pop(0);
+		if (token.upper() == 'GIT-COMMIT'):
+			for token in parts:
+				token = token.strip();
+				if is_git_commit(token):
+					lst.append(token);
+					break;
+
+	fd.close();
+
+	return;
+
+def do_commit_series(argv):
+	if len(argv) < 1:
+		print "commit-series needs database and (optional) file as parameter";
+		return 1;
+
+	name = argv.pop(0);
+
+	if not watches.has_section(name):
+		print "Unknown database: " + name;
+		return 1;
+
+	if (len(argv) < 1):
+		series_file = "series.conf";
+	else:
+		series_file = argv.pop(0);
+
+	fd = open(series_file, 'r');
+	patch_files = list();
+
+	for line in fd:
+		line = line.strip();
+		if (len(line) == 0 or line[0] == '#'):
+			continue;
+		parts = line.split(' ');
+		for part in parts:
+			if os.path.isfile(part):
+				patch_files.append(part);
+				break;
+
+	fd.close();
+
+	commits = list();
+	for patch in patch_files:
+		parse_patch_file(patch, commits);
+
+	print 'Loaded {0} commit-ids from {1} patch files'.format(len(commits), len(patch_files));
+	save_commit_list(name, commits);
+
+	return 0;
+
 def do_black_list(argv):
 	if len(argv) < 1:
 		print "commit-list needs database and (optional) file as parameter";
@@ -472,11 +531,12 @@ def do_black_list(argv):
 
 def print_cmds():
 	print "Available commands:"
-	print "  init,i          Initialize a commit tracking database"
-	print "  update,up       Update a commit tracking database"
-	print "  match,m         Match commits in a database against a commit list"
-	print "  commit-list,cl  Set commit list file for a tracking database"
-	print "  black-list,bl   Add commits to the blacklist for a database"
+	print "  init,i           Initialize a commit tracking database"
+	print "  update,up        Update a commit tracking database"
+	print "  match,m          Match commits in a database against a commit list"
+	print "  commit-list,cl   Set commit list file for a tracking database"
+	print "  commit-series,cs Find commit list from a series.conf file"
+	print "  black-list,bl    Add commits to the blacklist for a database"
 	return 0
 
 def main():
@@ -498,6 +558,8 @@ def main():
 		return do_match(sys.argv);
 	elif (cmd == 'commit-list' or cmd == 'cl'):
 		return do_commit_list(sys.argv);
+	elif (cmd == 'commit-series' or cmd == 'cs'):
+		return do_commit_series(sys.argv);
 	elif (cmd == 'black-list' or cmd == 'bl'):
 		return do_black_list(sys.argv);
 	else:
