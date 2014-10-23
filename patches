@@ -375,7 +375,7 @@ def do_match(argv):
 
 	commit_set = set();
 	for c in commit_list:
-		commit_set.add(c.upper());
+		commit_set.add(c['id'].upper());
 
 	if (no_blacklist == False and watches.has_option(name, 'blacklist')):
 		bl = load_black_list(watches.get(name, 'blacklist'));
@@ -438,13 +438,21 @@ def do_commit_list(argv):
 	data = load_commit_list(file_name);
 	print 'Loaded {0} commit-ids from list'.format(len(data));
 
-	save_commit_list(name, data);
+	commits = list();
+	for item in data:
+		commit = dict();
+		commit['id'] = item;
+		commit['committer'] = 'Unknown';
+		commits.append(commit);
+
+	save_commit_list(name, commits);
 
 	return 0;
 
-def parse_patch_file(file_name, lst):
+def parse_patch_file(file_name):
 	fd = open(file_name, 'r');
-
+	temp_list = list();
+	committer = 'Unknown';
 	for line in fd:
 		parts = line.split(':');
 		if (len(parts) < 2):
@@ -454,12 +462,19 @@ def parse_patch_file(file_name, lst):
 			for token in parts:
 				token = token.strip();
 				if is_git_commit(token):
-					lst.append(token);
+					temp_list.append(token);
 					break;
 
 	fd.close();
 
-	return;
+	ret = list();
+	for item in temp_list:
+		commit = dict();
+		commit['id'] = item;
+		commit['committer'] = committer;
+		ret.append(commit);
+
+	return ret;
 
 def do_commit_series(argv):
 	if len(argv) < 1:
@@ -494,7 +509,7 @@ def do_commit_series(argv):
 
 	commits = list();
 	for patch in patch_files:
-		parse_patch_file(patch, commits);
+		commits += parse_patch_file(patch);
 
 	print 'Loaded {0} commit-ids from {1} patch files'.format(len(commits), len(patch_files));
 	save_commit_list(name, commits);
