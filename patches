@@ -449,6 +449,20 @@ def do_commit_list(argv):
 
 	return 0;
 
+def find_committer(line):
+	domains = set(['suse.de', 'suse.cz', 'suse.com', 'novell.com']);
+	tokens = line.split(' ');
+	for item in tokens:
+		item = item.strip(' <>\t\n\r');
+		pos = item.find('@');
+		if (pos == -1):
+			continue;
+		account, domain = item.split('@', 1);
+		if (domain in domains):
+			return item;
+
+	return '';
+
 def parse_patch_file(file_name):
 	fd = open(file_name, 'r');
 	temp_list = list();
@@ -464,6 +478,11 @@ def parse_patch_file(file_name):
 				if is_git_commit(token):
 					temp_list.append(token);
 					break;
+		if (token.upper() == 'SIGNED-OFF-BY'):
+			email = find_committer(parts.pop(0));
+			if (len(email) > 0):
+				committer = email;
+				continue;
 
 	fd.close();
 
