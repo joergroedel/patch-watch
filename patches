@@ -315,16 +315,23 @@ def add_item_to_maintainer(maintainers, item):
 
 	return
 
-def print_item_list(results, indent=''):
+def print_item_list(results, committers, indent=''):
 	for item in results:
-		print '{0}{1} {2}'.format(indent, item['id'], item['subject']);
+		people_set = set()
+		people     = '';
+		for ref in item['refs']:
+			if ref.upper() in committers:
+				people_set.add(committers[ref.upper()]);
+		for p in people_set:
+			people += " " + p;
+		print '{0}{1} {2} ({3})'.format(indent, item['id'], item['subject'], people.strip());
 
-def print_maintainers(maintainers):
+def print_maintainers(maintainers, committers):
 	for maint in maintainers:
 		if (len(maint['commits']) == 0):
 			continue;
 		print maint['name'];
-		print_item_list(maint['commits'], indent="        ");
+		print_item_list(maint['commits'], committers, indent="        ");
 		print;
 
 	return;
@@ -374,8 +381,10 @@ def do_match(argv):
 	commit_list = read_db_file(commit_file);
 
 	commit_set = set();
+	committers = dict();
 	for c in commit_list:
 		commit_set.add(c['id'].upper());
+		committers[c['id'].upper()] = c['committer'];
 
 	if (no_blacklist == False and watches.has_option(name, 'blacklist')):
 		bl = load_black_list(watches.get(name, 'blacklist'));
@@ -405,9 +414,9 @@ def do_match(argv):
 			results.append(item);
 
 	if (use_maintainers):
-		print_maintainers(maintainers);
+		print_maintainers(maintainers, committers);
 	else:
-		print_item_list(results);
+		print_item_list(results, committers);
 
 	return 0;
 
